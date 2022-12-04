@@ -22,31 +22,76 @@ public class EmployeeService
             return new Response<List<GetFullInformationDto>>(result.ToList());
         }
     }
-    public async Task<Response<EmployeeDto>> InsertEmployee(EmployeeDto employee)
+    public async Task<Response<GetEmployeeDto>> InsertEmployee(EmployeeDto employee)
     {
         try
         {
             using (var con = _context.CreateConnection())
             {
-                var path = Path.Combine(_accept.WebRootPath, "images", employee.File.FileName);
-            
-                using (var res = File.Create(path))
-                {
-                    await employee.File.CopyToAsync(res);
-                }
                 var insertedId = await con.ExecuteScalarAsync<int>($"INSERT INTO EMPLOYEES(first_name, last_name, email , phone_number, department_id , manager_id , commission , salary, job_id , hire_date ) VALUES "
-                +$"('{employee.FirstName}','{employee.LastName}','{employee.Email}','{employee.PhoneNumber}', '{employee.DepartId}', '{employee.ManagerId}', '{employee.Commission}', '{employee.Salary}', '{employee.JobId}', '{employee.HireDate}')");
+                +$"('{employee.FirstName}',"
+                +$"'{employee.LastName}',"
+                +$"'{employee.Email}',"
+                +$"'{employee.PhoneNumber}',"
+                +$"'{employee.DepartId}',"
+                +$"'{employee.ManagerId}',"
+                +$"'{employee.Commission}',"
+                +$"'{employee.Salary}',"
+                +$"'{employee.JobId}',"
+                +$"'{employee.HireDate}')");
                 employee.EmployeeId = insertedId;
-                var response = new EmployeeDto()
+                var  response = new GetEmployeeDto()
                 {
-                    EmployeeId = employee.EmployeeId, FirstName = employee.FirstName, LastName = employee.LastName, Email = employee.Email, PhoneNumber = employee.PhoneNumber, DepartId = employee.DepartId,  ManagerId = employee.ManagerId, Commission = employee.Commission,  Salary = employee.Salary, JobId = employee.JobId,  HireDate = employee.HireDate,  FileName= employee.FileName
+                    EmployeeId = employee.EmployeeId, 
+                    FirstName = employee.FirstName, 
+                    LastName = employee.LastName, 
+                    Email = employee.Email, 
+                    PhoneNumber = employee.PhoneNumber, 
+                    DepartId = employee.DepartId,  
+                    ManagerId = employee.ManagerId, 
+                    Commission = employee.Commission,  
+                    Salary = employee.Salary, 
+                    JobId = employee.JobId,  
+                    HireDate = employee.HireDate
                 };
-                return new Response<EmployeeDto>(response);
+                var path = Path.Combine(_accept.WebRootPath, "images");
+                if (Directory.Exists(path) == false)
+                {
+                Directory.CreateDirectory(path);
+                }
+                foreach (var file in employee.File)
+                {
+                response.File.(file.FileName);
+                var filePath = Path.Combine(path,file.FileName);
+                using(var stream = File.Create(filePath)){
+                await file.CopyToAsync(stream);
+                 }
+                 } 
+                return response;
             }
         }
-        catch(Exception ex)
+                catch(Exception ex)
+                {
+                return new Response<GetEmployeeDto>(System.Net.HttpStatusCode.InternalServerError, ex.Message);
+                }
+    }
+    public async Task<int> UpdatEmployees(EmployeeDto employee)
+    {
+        using ( var conn = _context.CreateConnection())
         {
-            return new Response<EmployeeDto>(System.Net.HttpStatusCode.InternalServerError, ex.Message);
+            var sql = $"UBDATE EMPLOYEES SET "
+            +$"first_name = '{employee.FirstName}',"
+            +$"last_name = '{employee.LastName}', "
+            +$"email = '{employee.Email}', "
+            +$"phone_number = '{employee.PhoneNumber}', "
+            +$"department_id = {employee.DepartId}, "
+            +$"manager_id = {employee.ManagerId}, "
+            +$"commission = {employee.Commission}, "
+            +$"salary = {employee.Salary}, "
+            +$"job_id = {employee.JobId}, "
+            +$"hire_date = {employee.HireDate},"; 
+            var result = await conn.ExecuteAsync(sql);
+            return result;
         }
     }
     public async Task<int> UpdatEmployees(EmployeeDto employee)
