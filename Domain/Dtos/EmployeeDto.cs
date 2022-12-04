@@ -17,7 +17,9 @@ public class EmployeeDto
      public List<string>? FileName { get; set; }
     public DateTime HireDate { get; set; }
 }
- public int EmployeeId { get; set; }
+public class GetEmployeeDto
+{
+    public int EmployeeId { get; set; }
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Email { get; set; }
